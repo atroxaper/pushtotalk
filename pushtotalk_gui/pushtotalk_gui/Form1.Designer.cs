@@ -42,6 +42,10 @@
             this.HotKey_btn = new System.Windows.Forms.Button();
             this.Mute_tmr = new System.Windows.Forms.Timer(this.components);
             this.About_btn = new System.Windows.Forms.Button();
+            this.pttButton = new System.Windows.Forms.RadioButton();
+            this.toggleButton = new System.Windows.Forms.RadioButton();
+            this.DeviceState_lbl = new System.Windows.Forms.Label();
+            this.DeviceStateValue_lbl = new System.Windows.Forms.Label();
             this.NotifyIconContextMenu.SuspendLayout();
             this.SuspendLayout();
             // 
@@ -140,7 +144,7 @@
             // About_btn
             // 
             this.About_btn.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
-            this.About_btn.Location = new System.Drawing.Point(285, 34);
+            this.About_btn.Location = new System.Drawing.Point(285, 57);
             this.About_btn.Name = "About_btn";
             this.About_btn.Size = new System.Drawing.Size(89, 22);
             this.About_btn.TabIndex = 4;
@@ -148,11 +152,55 @@
             this.About_btn.UseVisualStyleBackColor = true;
             this.About_btn.Click += new System.EventHandler(this.About_btn_Click);
             // 
+            // pttButton
+            // 
+            this.pttButton.AutoSize = true;
+            this.pttButton.Checked = true;
+            this.pttButton.Location = new System.Drawing.Point(209, 34);
+            this.pttButton.Name = "pttButton";
+            this.pttButton.Size = new System.Drawing.Size(81, 17);
+            this.pttButton.TabIndex = 5;
+            this.pttButton.TabStop = true;
+            this.pttButton.Text = "Push to talk";
+            this.pttButton.UseVisualStyleBackColor = true;
+            // 
+            // toggleButton
+            // 
+            this.toggleButton.AutoSize = true;
+            this.toggleButton.Location = new System.Drawing.Point(300, 34);
+            this.toggleButton.Name = "toggleButton";
+            this.toggleButton.Size = new System.Drawing.Size(58, 17);
+            this.toggleButton.TabIndex = 6;
+            this.toggleButton.Text = "Toggle";
+            this.toggleButton.UseVisualStyleBackColor = true;
+            this.toggleButton.CheckedChanged += new System.EventHandler(this.pttButtonCheckedChanged);
+            // 
+            // DeviceState_lbl
+            // 
+            this.DeviceState_lbl.AutoSize = true;
+            this.DeviceState_lbl.Location = new System.Drawing.Point(14, 62);
+            this.DeviceState_lbl.Name = "DeviceState_lbl";
+            this.DeviceState_lbl.Size = new System.Drawing.Size(70, 13);
+            this.DeviceState_lbl.TabIndex = 7;
+            this.DeviceState_lbl.Text = "Device state:";
+            // 
+            // DeviceStateValue_lbl
+            // 
+            this.DeviceStateValue_lbl.AutoSize = true;
+            this.DeviceStateValue_lbl.Location = new System.Drawing.Point(90, 62);
+            this.DeviceStateValue_lbl.Name = "DeviceStateValue_lbl";
+            this.DeviceStateValue_lbl.Size = new System.Drawing.Size(0, 13);
+            this.DeviceStateValue_lbl.TabIndex = 8;
+            // 
             // Form1
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(375, 57);
+            this.ClientSize = new System.Drawing.Size(375, 80);
+            this.Controls.Add(this.DeviceStateValue_lbl);
+            this.Controls.Add(this.DeviceState_lbl);
+            this.Controls.Add(this.toggleButton);
+            this.Controls.Add(this.pttButton);
             this.Controls.Add(this.About_btn);
             this.Controls.Add(this.CaptureDevice_lbl);
             this.Controls.Add(this.HotKey_btn);
@@ -185,6 +233,10 @@
         private System.Windows.Forms.Button HotKey_btn;
         private System.Windows.Forms.Timer Mute_tmr;
         private System.Windows.Forms.Button About_btn;
+        private System.Windows.Forms.RadioButton pttButton;
+        private System.Windows.Forms.RadioButton toggleButton;
+        private System.Windows.Forms.Label DeviceState_lbl;
+        private System.Windows.Forms.Label DeviceStateValue_lbl;
     }
 }
 

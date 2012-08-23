@@ -24,14 +24,28 @@ namespace pushtotalk_gui
         [System.Runtime.InteropServices.DllImport("pushtotalk.dll",  EntryPoint = "FindNextCaptureDevice", CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Unicode)]
         private static extern bool pushtotalk_FindNextCaptureDevice(StringBuilder CaptureDevice, uint CaptureDeviceLen);
         
-        string VERSION = "Hardings Global Push-To-Talk v0.9.3";
-        string CODER_EMAIL = "globalpushtotalk@hardingonline.se";
-        string HOMEPAGE_LINK = "http://hardingonline.se/hgptt";
-        string LAST_UPDATED = "2012-12-06";
+        private const string VERSION = "Hardings Global Push-To-Talk v0.10";
+        private const string MAIN_DEVELOPER = "Harding";
+        private const string MAIN_DEVELOPER_EMAIL = "globalpushtotalk@hardingonline.se";
+        private const string SECOND_DEVELOPER = "atroxaper";
+        private const string SECOND_DEVELOPER_EMAIL = "atroxaper@gmail.com";
+        private const string HOMEPAGE_LINK = "http://hardingonline.se/hgptt";
+        private const string LAST_UPDATED = "2012-08-23";
+        private const string AboutInfo = VERSION + "\r\nWritten by " + MAIN_DEVELOPER + " (" + MAIN_DEVELOPER_EMAIL + ")\r\nand " + SECOND_DEVELOPER + " (" + SECOND_DEVELOPER_EMAIL + ")\r\n" +
+                                         "Homepage: " + HOMEPAGE_LINK + "\r\nLast updated: " + LAST_UPDATED;
+
+        private const string MUTE_LITERAL = "Muted";
+        private const string UNMUTE_LITERAL = "UnMuted";
+
         List<string> ConfigPathList;
-        uint TheHotKey;
         string ConfigPathHotkey;
         string ConfigPathLastUsedSoundcard;
+        string ConfigPathWorkType;
+
+        uint TheHotKey;
+        Boolean WorkType = true; // true - PTT; false - Toggle;
+        Boolean ToggleState = false; // true - UnMute; false - Mute;
+
         List<bool> DefaultStatesOfMics = new List<bool>();
 
         #region Init
@@ -43,8 +57,6 @@ namespace pushtotalk_gui
 
         private void Form1_Load(object sender, EventArgs e)
         {
-            this.Text = VERSION;
-
             try
             {
                 uint MAX_STRING_LENGTH = 255;
@@ -58,27 +70,16 @@ namespace pushtotalk_gui
                 // Save the default state the mics where in before we started to fool around
                 for (int i = 0; i < CaptureDevice_cBox.Items.Count; i++)
                     DefaultStatesOfMics.Add(pushtotalk_GetMuteStatus(i));
-                
-                // Removed as of 2012-01-06 since we save the last used soundcard in the config file /Harding 
-                /*
-                // Select the first one
-                if (CaptureDevice_cBox.Items.Count > 0)
-                {
-                    CaptureDevice_cBox.SelectedIndex = 0;
-                    CaptureDevice_cBox_SelectedIndexChanged(null, null); // Simulate the user chosing the first mic as default
-                }
-                */
-
             }
             catch (Exception exc)
             {
-                if (exc.Message.Substring(0, 18) == "Unable to load DLL")
+                if (exc.Message.Contains("dll"))
                 {
-                    MessageBox.Show("Could not find pushtotalk.dll, please make sure this is in the same directory as the program", "Missing DLL", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    MessageBox.Show("Could not find pushtotalk.dll, please make sure this is in the same directory as the program. Error: " + exc.Message, "Missing DLL", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 }
                 else
                 {
-                    MessageBox.Show("Unknown error, please send an email to " + CODER_EMAIL + " and describe this problem.", "Unknown error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    MessageBox.Show("Unknown error, please send an email to " + MAIN_DEVELOPER_EMAIL + " or " + SECOND_DEVELOPER_EMAIL + " and describe this problem. Error: " + exc.Message, "Unknown error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 }
                 Application.Exit();
             }
@@ -98,6 +99,7 @@ namespace pushtotalk_gui
             }
             ConfigPathList = null;
             ConfigPathLastUsedSoundcard = ConfigPathHotkey + "\\lastsndcard.dat";
+            ConfigPathWorkType = ConfigPathHotkey + "\\worktype.dat";
             ConfigPathHotkey += "\\hotkey.dat";
 
             #region Read hotkey config
@@ -115,6 +117,33 @@ namespace pushtotalk_gui
                     }
                 }
                 RegisterHotKey(KeyModifiers.None, TheHotKey);
+
+            }
+            #endregion
+
+            #region Read worktype config
+            // worktype.dat format is 1 bytes worktype as Boolen (1 - PTT; 0 - Toggle)
+            if (File.Exists(ConfigPathWorkType))
+            {
+                using (FileStream s = new FileStream(ConfigPathWorkType, FileMode.Open, FileAccess.Read)) // This path always exists since the FormLoad() makes that sure
+                {
+                    using (BinaryReader br = new BinaryReader(s))
+                    {
+                        WorkType = br.ReadBoolean();
+                        br.Close();
+                        if (WorkType)
+                        {
+                            toggleButton.Checked = false;
+                            pttButton.Checked = true;
+                        }
+                        else
+                        {
+                            toggleButton.Checked = true;
+                            pttButton.Checked = false;
+                        }
+
+                    }
+                }
 
             }
             #endregion
@@ -156,23 +185,6 @@ namespace pushtotalk_gui
         
         #endregion
 
-        protected override void OnHotKeyPress(object sender, EventArgs e)
-        {
-            if (-1 == CaptureDevice_cBox.SelectedIndex)
-                return;
-            try
-            {
-                pushtotalk_UnMuteMic(CaptureDevice_cBox.SelectedIndex);
-            }
-            catch (Exception exc)
-            {
-                MessageBox.Show("Exception: " + exc.Message);
-            }
-            
-            Mute_tmr.Stop();
-            Mute_tmr.Start();
-        }
-
         #region Notify icon
 
         private void MyNotifyIcon_DoubleClick(object sender, EventArgs e)
@@ -198,13 +210,9 @@ namespace pushtotalk_gui
         /// </summary>
         private void ShowAboutInfo()
         {
-            string info = VERSION + " written by Harding (" + CODER_EMAIL + ")\r\n";
-            info += "Last updated " + LAST_UPDATED + ".\r\n";
-            info += "Homepage: " + HOMEPAGE_LINK;
-            
-            MessageBox.Show(info, "About " + VERSION, MessageBoxButtons.OK, MessageBoxIcon.Information);
+            MessageBox.Show(AboutInfo, "About " + VERSION, MessageBoxButtons.OK, MessageBoxIcon.Information);
         }
-        
+
         private void aboutToolStripMenuItem_Click(object sender, EventArgs e)
         {
             ShowAboutInfo();
@@ -243,6 +251,121 @@ namespace pushtotalk_gui
             HotKey_btn.Text = System.Enum.GetName(typeof(Keys), e.KeyCode);
             CaptureDevice_cBox.Focus();
 
+            RegisterHotKey(KeyModifiers.None, TheHotKey);
+        }
+        #endregion
+        
+        void pttButtonCheckedChanged(object sender, EventArgs e)
+        {
+            RadioButton rb = sender as RadioButton;
+            if (rb == null)
+            {
+                return;
+            }
+
+            WorkType = !rb.Checked;
+            Mute();
+        }
+        
+        protected override void OnHotKeyPress(object sender, EventArgs e)
+        {
+            if (-1 == CaptureDevice_cBox.SelectedIndex)
+                return;
+            if (WorkType) // ptt
+            {
+                OnPttKeyPress();
+            }
+            else
+            {
+                OnToggleKeyPress();
+            }
+            
+        }
+
+        private void OnToggleKeyPress()
+        {
+            if (ToggleState) // UnMute
+            {
+                Mute();
+            }
+            else // Mute
+            {
+                UnMute();
+            }
+            ToggleState = !ToggleState;
+        }
+
+        private void OnPttKeyPress()
+        {
+            try
+            {
+                UnMute();
+            }
+            catch (Exception exc)
+            {
+                MessageBox.Show("Exception: " + exc.Message);
+            }
+
+            Mute_tmr.Stop();
+            Mute_tmr.Start();
+        }
+
+        private void Mute_tmr_Tick(object sender, EventArgs e)
+        {
+            if (-1 == CaptureDevice_cBox.SelectedIndex)
+                return;
+            try
+            {
+                Mute();
+                Mute_tmr.Stop();
+            }
+            catch (Exception exc)
+            {
+                MessageBox.Show("Exception: " + exc.Message);
+            }
+        }
+
+        private void CaptureDevice_cBox_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            if (-1 == CaptureDevice_cBox.SelectedIndex)
+                return;
+
+            SetMicsToDefaultState();
+
+            Mute();
+
+        }
+
+        private void About_btn_Click(object sender, EventArgs e)
+        {
+            ShowAboutInfo();
+        }
+
+        /// <summary>
+        /// Restore the mics to their original state
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void Form1_FormClosed(object sender, FormClosedEventArgs e)
+        {
+            SetMicsToDefaultState();
+            SaveHotkey();
+            SaveSndCard();
+            SaveWorkType();
+        }
+
+        #region Save state for next start application
+        private void SetMicsToDefaultState()
+        {
+            for (int i = 0; i < CaptureDevice_cBox.Items.Count; i++)
+                if (DefaultStatesOfMics[i])
+                    pushtotalk_MuteMic(i);
+                else
+                    pushtotalk_UnMuteMic(i);
+        }
+
+        private void SaveHotkey()
+        {
             using (FileStream s = new FileStream(ConfigPathHotkey, FileMode.Create, FileAccess.Write)) // This path always exists since the FormLoad() makes that sure
             {
                 using (BinaryWriter bw = new BinaryWriter(s))
@@ -252,50 +375,10 @@ namespace pushtotalk_gui
                     bw.Close();
                 }
             }
-            RegisterHotKey(KeyModifiers.None, TheHotKey);
-        }
-        #endregion
-
-        private void Mute_tmr_Tick(object sender, EventArgs e)
-        {
-            if (-1 == CaptureDevice_cBox.SelectedIndex)
-                return;
-            try
-            {
-                pushtotalk_MuteMic(CaptureDevice_cBox.SelectedIndex);
-                Mute_tmr.Stop();
-            }
-            catch (Exception exc)
-            {
-                MessageBox.Show("Exception: " + exc.Message);
-            }
         }
 
-        private void SetMicsToDefaultState()
+        private void SaveSndCard()
         {
-            for (int i = 0; i < CaptureDevice_cBox.Items.Count; i++)
-                if (DefaultStatesOfMics[i])
-                    pushtotalk_MuteMic(i);
-                else
-                    pushtotalk_UnMuteMic(i);
-        }
-        /// <summary>
-        /// Restore the mics to their original state
-        /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="e"></param>
-        private void Form1_FormClosed(object sender, FormClosedEventArgs e)
-        {
-            SetMicsToDefaultState();
-        }
-        
-        private void CaptureDevice_cBox_SelectedIndexChanged(object sender, EventArgs e)
-        {
-            SetMicsToDefaultState();
-            if (-1 == CaptureDevice_cBox.SelectedIndex)
-                return;
-            
-            #region Save the select card as last used for next time we start the program
             using (FileStream s = new FileStream(ConfigPathLastUsedSoundcard, FileMode.Create, FileAccess.Write)) // This path always exists since the FormLoad() makes that sure
             {
                 using (BinaryWriter bw = new BinaryWriter(s))
@@ -304,15 +387,31 @@ namespace pushtotalk_gui
                     bw.Close();
                 }
             }
-            #endregion
-
-            pushtotalk_MuteMic(CaptureDevice_cBox.SelectedIndex);
-
         }
 
-        private void About_btn_Click(object sender, EventArgs e)
+        private void SaveWorkType()
         {
-            ShowAboutInfo();
+            using (FileStream s = new FileStream(ConfigPathWorkType, FileMode.Create, FileAccess.Write)) // This path always exists since the FormLoad() makes that sure
+            {
+                using (BinaryWriter bw = new BinaryWriter(s))
+                {
+                    bw.Write(WorkType);
+                    bw.Close();
+                }
+            }
+        }
+        #endregion
+
+        private void Mute()
+        {
+            pushtotalk_MuteMic(CaptureDevice_cBox.SelectedIndex);
+            this.DeviceStateValue_lbl.Text = MUTE_LITERAL;
+        }
+
+        private void UnMute()
+        {
+            pushtotalk_UnMuteMic(CaptureDevice_cBox.SelectedIndex);
+            this.DeviceStateValue_lbl.Text = UNMUTE_LITERAL;
         }
     }
 }

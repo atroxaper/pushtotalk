@@ -34,7 +34,7 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <PropertyGroup>
-    <ApplicationIcon>network.ico</ApplicationIcon>
+    <ApplicationIcon>Resources\icon.ico</ApplicationIcon>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
@@ -84,7 +84,16 @@
     </Compile>
   </ItemGroup>
   <ItemGroup>
-    <Content Include="network.ico" />
+    <Content Include="Resources\blue-pin-icone-4955-128.png" />
+    <Content Include="Resources\blue-pin-icone-4955-16.png" />
+    <Content Include="Resources\blue-pin-icone-4955-32.png" />
+    <Content Include="Resources\blue-pin-icone-4955-48.png" />
+    <Content Include="Resources\blue-pin-icone-4955-64.png" />
+    <Content Include="Resources\blue-pin-icone-4955-96.png" />
+    <Resource Include="Resources\icon.ico" />
+    <None Include="pushtotalk.dll">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
